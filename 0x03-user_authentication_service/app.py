@@ -2,6 +2,7 @@
 """A basic Flask app
 """
 from flask import Flask, jsonify, request, abort, redirect
+
 from auth import Auth
 
 
@@ -11,7 +12,7 @@ AUTH = Auth()
 
 @app.route("/", methods=["GET"], strict_slashes=False)
 def index() -> str:
-    """GET route ("/")
+    """GET /
     """
     return jsonify({"message": "Bienvenue"})
 
@@ -56,8 +57,6 @@ def logout() -> str:
 @app.route("/profile", methods=["GET"], strict_slashes=False)
 def profile() -> str:
     """GET /profile
-    Return:
-        - The user's profile information.
     """
     session_id = request.cookies.get("session_id")
     user = AUTH.get_user_from_session_id(session_id)
@@ -66,12 +65,24 @@ def profile() -> str:
     return jsonify({"email": user.email})
 
 
+@app.route("/reset_password", methods=["POST"], strict_slashes=False)
+def get_reset_password_token() -> str:
+    """POST /reset_password
+    """
+    email = request.form.get("email")
+    reset_token = None
+    try:
+        reset_token = AUTH.get_reset_password_token(email)
+    except ValueError:
+        reset_token = None
+    if reset_token is None:
+        abort(403)
+    return jsonify({"email": email, "reset_token": reset_token})
+
+
 @app.route("/reset_password", methods=["PUT"], strict_slashes=False)
 def update_password() -> str:
     """PUT /reset_password
-
-    Return:
-        - The user's password updated payload.
     """
     email = request.form.get("email")
     reset_token = request.form.get("reset_token")
